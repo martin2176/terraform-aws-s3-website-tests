@@ -7,6 +7,7 @@ run "setup_tests" {
 
 # Apply run block to create the bucket
 run "create_bucket" {
+command = apply
   variables {
     bucket_name = "${run.setup_tests.bucket_prefix}-aws-s3-website-test"
   }
@@ -29,3 +30,19 @@ run "create_bucket" {
     error_message = "Invalid eTag for error.html"
   }
 }
+
+run "website_is_running" {
+command = plan
+module {
+    source = "./tests/final"
+  }
+variables {
+    endpoint = run.create_bucket.website_endpoint
+  }
+
+ assert {
+    condition     = data.http.index.status_code == 200
+    error_message = "Website responded with HTTP status ${data.http.index.status_code}"
+  }
+}
+
